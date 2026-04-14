@@ -1,59 +1,178 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Konserwatorium Muzyczne - SPA Laravel + Vue (CSV only)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Prosta aplikacja SPA z backendem w Laravel i frontendem w Vue.
+Źródłem danych jest wyłącznie plik CSV. Brak logowania, autoryzacji i brak klasycznej bazy danych dla danych biznesowych.
 
-## About Laravel
+## Cel funkcjonalny
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+1. Lista eventów:
+- data wydarzenia
+- miasto
+- kategoria
+- suma sprzedanych biletów
+- liczone wyłącznie dla status = confirmed
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+2. Ranking UTM:
+- Top 10 kampanii utm_campaign
+- sortowanie malejąco po łącznej liczbie sprzedanych biletów (confirmed)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+3. Filtrowanie listy eventów:
+- city
+- zakres dat event_date (from - to)
+- category (kids/adults)
 
-## Learning Laravel
+## Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- PHP + Laravel 12
+- Vue 3 + Vite
+- calebporzio/sushi (model Eloquent oparty o CSV)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Uruchomienie projektu
 
-## Laravel Sponsors
+1. Instalacja zależności PHP:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+composer install
+```
 
-### Premium Partners
+2. Instalacja zależności frontend:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+npm install
+```
 
-## Contributing
+3. Start backendu:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan serve
+```
 
-## Code of Conduct
+4. Start frontendu (drugi terminal):
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+npm run dev
+```
 
-## Security Vulnerabilities
+5. Aplikacja:
+- http://127.0.0.1:8000
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Dane wejściowe CSV
 
-## License
+Plik danych:
+- storage/app/data/events.csv
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Oczekiwane kolumny:
+- event_id
+- event_date
+- city
+- category
+- order_id
+- ticket_qty
+- status
+- utm_source
+- utm_campaign
+- utm_content
+- sold_out
+
+## Endpointy API
+
+1. GET /api/events
+- zwraca listę eventów zagregowanych po event_id
+- suma ticket_qty tylko dla status=confirmed
+
+Parametry (opcjonalne):
+- city
+- category
+- date_from
+- date_to
+
+Przykład:
+
+```http
+GET /api/events?city=Warsaw&category=kids&date_from=2026-04-01&date_to=2026-04-30
+```
+
+2. GET /api/utm-ranking
+- zwraca Top 10 kampanii utm_campaign
+- sortowanie malejąco po confirmed_tickets_sum
+
+## Struktura projektu (najważniejsze pliki)
+
+- app/Models/CsvEvent.php
+	Model Eloquent oparty o Sushi. Odczytuje i mapuje rekordy CSV do obiektów modelu.
+
+- app/Services/CsvEventAnalyticsService.php
+	Serwis analityczny: agregacje eventów, ranking UTM i nakładanie filtrów.
+
+- app/Http/Controllers/EventAnalyticsController.php
+	Kontroler API zwracający dane dla endpointów /api/events i /api/utm-ranking.
+
+- routes/api.php
+	Definicje tras API.
+
+- resources/js/App.vue
+	Widok SPA z tabelą eventów, rankingiem i formularzem filtrów.
+
+- tests/Feature/EventAnalyticsApiTest.php
+	Testy endpointów zgodności z wymaganiami zadania.
+
+## Jak działa serwis analityczny
+
+Plik: app/Services/CsvEventAnalyticsService.php
+
+1. `getEventSummaries(array $filters = [])`
+- buduje zapytanie na modelu `CsvEvent`
+- wymusza `status = confirmed`
+- nakłada filtry (`city`, `category`, `date_from`, `date_to`)
+- pobiera rekordy i grupuje je po `event_id`
+- dla każdej grupy zwraca:
+	- `event_id`
+	- `event_date`
+	- `city`
+	- `category`
+	- `confirmed_tickets_sum` = suma `ticket_qty`
+- sortuje wynik po `event_date`
+
+2. `getTopUtmCampaigns(int $limit = 10)`
+- pobiera rekordy `status = confirmed`
+- grupuje po `utm_campaign` (puste wartości mapuje na `unknown`)
+- sumuje `ticket_qty`
+- sortuje malejąco po sumie
+- zwraca pierwsze 10 pozycji
+
+3. `applyFilters(Builder $query, array $filters)`
+- `city` -> `where city = ...`
+- `category` -> `where category = ...`
+- `date_from` -> `where event_date >= ...`
+- `date_to` -> `where event_date <= ...`
+
+## Jak działa model CSV (Sushi)
+
+Plik: app/Models/CsvEvent.php
+
+- model korzysta z traita `Sushi`
+- metoda `getRows()`:
+	- otwiera `storage/app/data/events.csv`
+	- odczytuje nagłówek
+	- mapuje kolejne linie na tablice asocjacyjne
+	- dodaje techniczne pole `id` (wymagane jako klucz modelu)
+- dzięki temu rekordy CSV są dostępne przez API Eloquent (`query`, `where`, `get`, `groupBy`)
+
+## Testy
+
+Uruchom wszystkie testy:
+
+```bash
+php artisan test
+```
+
+Uruchom tylko testy endpointów analytics:
+
+```bash
+php artisan test --filter=EventAnalyticsApiTest
+```
+
+Zakres testów w tests/Feature/EventAnalyticsApiTest.php:
+- lista eventów: confirmed-only + poprawna agregacja biletów
+- filtrowanie: city + category + date range
+- ranking UTM: Top 10 + sortowanie malejące
