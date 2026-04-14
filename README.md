@@ -1,5 +1,11 @@
 # Konserwatorium Muzyczne - SPA Laravel + Vue (CSV only)
 
+## Demo online
+
+Aplikacja zostala zhostowana na Laravel Cloud i jest dostepna pod adresem:
+
+https://laravel-csv-event-viewer-main-9v5oy8.free.laravel.cloud/#/
+
 Prosta aplikacja SPA z backendem w Laravel i frontendem w Vue.
 Źródłem danych jest wyłącznie plik CSV. Brak logowania, autoryzacji i brak klasycznej bazy danych dla danych biznesowych.
 
@@ -89,7 +95,7 @@ Nawigacja między widokami:
 ## Dane wejściowe CSV
 
 Plik danych:
-- storage/app/data/events.csv
+- resources/data/events.csv
 
 Oczekiwane kolumny:
 - event_id
@@ -191,7 +197,7 @@ Plik: app/Models/CsvEvent.php
 
 - model korzysta z traita `Sushi`
 - metoda `getRows()`:
-	- otwiera `storage/app/data/events.csv`
+	- otwiera `resources/data/events.csv`
 	- odczytuje nagłówek
 	- mapuje kolejne linie na tablice asocjacyjne
 	- dodaje techniczne pole `id` (wymagane jako klucz modelu)

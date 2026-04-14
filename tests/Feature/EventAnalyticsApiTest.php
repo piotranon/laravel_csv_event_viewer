@@ -19,7 +19,7 @@ class EventAnalyticsApiTest extends TestCase
     {
         parent::setUp();
 
-        $this->csvPath = storage_path('app/data/events.csv');
+        $this->csvPath = resource_path('data/events.csv');
         $this->customCsvPath = storage_path('app/data/events.custom.csv');
 
         if (is_file($this->csvPath)) {

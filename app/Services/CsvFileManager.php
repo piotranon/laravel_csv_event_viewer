@@ -9,7 +9,7 @@ class CsvFileManager
 {
     public function getDefaultPath(): string
     {
-        return storage_path('app/data/events.csv');
+        return resource_path('data/events.csv');
     }
 
     public function getCustomPath(): string
