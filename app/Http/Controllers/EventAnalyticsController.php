@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Services\CsvEventAnalyticsService;
+use App\Services\CsvFileManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class EventAnalyticsController extends Controller
 {
-    public function __construct(private readonly CsvEventAnalyticsService $analyticsService)
-    {
-    }
+    public function __construct(
+        private readonly CsvEventAnalyticsService $analyticsService,
+        private readonly CsvFileManager $csvFileManager
+    ) {}
 
     public function events(Request $request): JsonResponse
     {
@@ -30,6 +33,40 @@ class EventAnalyticsController extends Controller
     {
         return response()->json([
             'data' => $this->analyticsService->getTopUtmCampaigns(10),
+        ]);
+    }
+
+    public function uploadCsv(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'mimes:csv,txt',
+                'mimetypes:text/plain,text/csv,application/csv,application/vnd.ms-excel',
+                'max:5120',
+            ],
+        ]);
+
+        try {
+            $this->csvFileManager->replaceWithUploaded($validated['file']);
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Plik CSV zostal wgrany. Uzywany jest teraz plik niestandardowy.',
+        ]);
+    }
+
+    public function resetCsv(): JsonResponse
+    {
+        $this->csvFileManager->resetToDefault();
+
+        return response()->json([
+            'message' => 'Przywrocono domyslny plik CSV.',
         ]);
     }
 }

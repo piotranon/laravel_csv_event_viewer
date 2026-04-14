@@ -2,22 +2,33 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class EventAnalyticsApiTest extends TestCase
 {
     private string $csvPath;
 
+    private string $customCsvPath;
+
     private ?string $originalCsv = null;
+
+    private ?string $originalCustomCsv = null;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->csvPath = storage_path('app/data/events.csv');
+        $this->customCsvPath = storage_path('app/data/events.custom.csv');
 
         if (is_file($this->csvPath)) {
             $this->originalCsv = file_get_contents($this->csvPath);
+        }
+
+        if (is_file($this->customCsvPath)) {
+            $this->originalCustomCsv = file_get_contents($this->customCsvPath);
+            unlink($this->customCsvPath);
         }
 
         if (!is_dir(dirname($this->csvPath))) {
@@ -33,6 +44,12 @@ class EventAnalyticsApiTest extends TestCase
             file_put_contents($this->csvPath, $this->originalCsv);
         } elseif (is_file($this->csvPath)) {
             unlink($this->csvPath);
+        }
+
+        if ($this->originalCustomCsv !== null) {
+            file_put_contents($this->customCsvPath, $this->originalCustomCsv);
+        } elseif (is_file($this->customCsvPath)) {
+            unlink($this->customCsvPath);
         }
 
         parent::tearDown();
@@ -112,6 +129,48 @@ class EventAnalyticsApiTest extends TestCase
         $this->assertSame($sorted, $values);
         $this->assertFalse($ranking->pluck('utm_campaign')->contains('camp_11'));
         $this->assertFalse($ranking->pluck('utm_campaign')->contains('camp_12'));
+    }
+
+    public function test_upload_csv_endpoint_saves_custom_file_and_changes_active_dataset(): void
+    {
+        $uploadContent = implode("\n", [
+            'event_id,event_date,city,category,order_id,ticket_qty,status,utm_source,utm_campaign,utm_content,sold_out',
+            'U001,2026-11-01,Warsaw,kids,O9001,9,confirmed,google,upload_campaign,banner,false',
+            'U001,2026-11-01,Warsaw,kids,O9002,1,confirmed,facebook,upload_campaign,story_ad,false',
+            'U002,2026-11-02,Gdansk,adults,O9003,4,cancelled,newsletter,other_campaign,video_ad,false',
+        ]) . "\n";
+
+        $file = UploadedFile::fake()->createWithContent('events.csv', $uploadContent);
+
+        $response = $this
+            ->withHeader('Accept', 'application/json')
+            ->post('/api/events/upload-csv', ['file' => $file]);
+
+        $response
+            ->assertOk()
+            ->assertJsonFragment(['message' => 'Plik CSV zostal wgrany. Uzywany jest teraz plik niestandardowy.']);
+
+        $this->assertFileExists($this->customCsvPath);
+        $this->assertGreaterThan(0, filesize($this->customCsvPath));
+
+        $events = collect($this->getJson('/api/events')->json('data'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame('U001', $events[0]['event_id']);
+        $this->assertSame(10, $events[0]['confirmed_tickets_sum']);
+    }
+
+    public function test_upload_csv_endpoint_rejects_empty_file(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('events.csv', '');
+
+        $response = $this
+            ->withHeader('Accept', 'application/json')
+            ->post('/api/events/upload-csv', ['file' => $file]);
+
+        $response
+            ->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Plik CSV jest pusty lub nieczytelny.']);
     }
 
     private function fixtureCsv(): string

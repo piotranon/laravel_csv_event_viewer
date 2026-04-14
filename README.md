@@ -56,6 +56,36 @@ npm run dev
 5. Aplikacja:
 - http://127.0.0.1:8000
 
+## Widoki Vue
+
+Frontend jest podzielony na 2 osobne widoki (SPA z vue-router):
+
+1. Lista eventów + filtrowanie
+- URL: http://127.0.0.1:8000/#/
+- plik widoku: resources/js/views/EventsView.vue
+- zawiera formularz filtrów:
+	- city
+	- category
+	- date_from
+	- date_to
+- po kliknięciu "Zastosuj filtry" pobiera dane z `/api/events`
+- wyświetla tabelę eventów z polami:
+	- event_id
+	- event_date
+	- city
+	- category
+	- confirmed_tickets_sum
+
+2. Ranking UTM
+- URL: http://127.0.0.1:8000/#/utm-ranking
+- plik widoku: resources/js/views/UtmRankingView.vue
+- pobiera dane z `/api/utm-ranking`
+- wyświetla ranking Top 10 kampanii utm_campaign z wartością confirmed_tickets_sum
+
+Nawigacja między widokami:
+- layout i menu: resources/js/App.vue
+- konfiguracja tras: resources/js/router/index.js
+
 ## Dane wejściowe CSV
 
 Plik danych:
@@ -111,7 +141,16 @@ GET /api/events?city=Warsaw&category=kids&date_from=2026-04-01&date_to=2026-04-3
 	Definicje tras API.
 
 - resources/js/App.vue
-	Widok SPA z tabelą eventów, rankingiem i formularzem filtrów.
+	Główny layout SPA i nawigacja między widokami.
+
+- resources/js/router/index.js
+	Definicja tras frontendu (`/#/` i `/#/utm-ranking`).
+
+- resources/js/views/EventsView.vue
+	Widok listy eventów i panel filtrowania.
+
+- resources/js/views/UtmRankingView.vue
+	Widok rankingu kampanii UTM.
 
 - tests/Feature/EventAnalyticsApiTest.php
 	Testy endpointów zgodności z wymaganiami zadania.

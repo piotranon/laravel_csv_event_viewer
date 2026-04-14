@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Services\CsvFileManager;
 use Illuminate\Database\Eloquent\Model;
 use Sushi\Sushi;
 
 class CsvEvent extends Model
 {
     use Sushi;
+
+    protected $sushiShouldCache = false;
 
     protected $primaryKey = 'id';
 
@@ -27,7 +30,7 @@ class CsvEvent extends Model
 
     public function getRows(): array
     {
-        $path = storage_path('app/data/events.csv');
+        $path = app(CsvFileManager::class)->getActivePath();
 
         if (!is_file($path)) {
             return [];
